@@ -1,4 +1,4 @@
-package mapping
+package com.soledede.cf.mapping
 
 import _root_.scopt.OptionParser
 import org.apache.hadoop.conf.Configuration
@@ -18,8 +18,8 @@ object Mapping2Hbase {
     //lond the config of Hbase，create Table recomend
     confHbase = HBaseConfiguration.create()
     confHbase.set("hbase.zookeeper.property.clientPort", "2181")
-    confHbase.set("hbase.zookeeper.quorum", "h4.xiaomishu.com,h2.xiaomishu.com,h6.xiaomishu.com,h5.xiaomishu.com,h7.xiaomishu.com,h1.xiaomishu.com,h3.xiaomishu.com,h10.xiaomishu.com,h9.xiaomishu.com,h8.xiaomishu.com")
-    confHbase.set("hbase.master", "h1.xiaomishu.com:60000")
+    confHbase.set("hbase.zookeeper.quorum", "spark2.soledede.com,spark3.soledede.com,spark1.soledede.com")
+    confHbase.set("hbase.master", "spark1.soledede.com:60000")
     confHbase.addResource("/opt/cloudera/parcels/CDH/lib/hbase/conf/hbase-site.xml")
     confHbase.set(TableInputFormat.INPUT_TABLE, "recomend")
 
@@ -27,10 +27,10 @@ object Mapping2Hbase {
 
   case class Params(
                      input: String = null,
-                     hbase_mapping_table:String = "mapping",
-                     hbase_columnfamily:String = "res",
+                     hbase_mapping_table:String = "itemMapping",
+                     hbase_columnfamily:String = "itemCF",
                      file_separator:String = "\\t",
-                     zookeeper_quorum: String = "spark1.xiaomishu.com,spark2.xiaomishu.com,spark4.xiaomishu.com,spark9.xiaomishu.com,spark9.xiaomishu.com"
+                     zookeeper_quorum: String = "spark2.soledede.com,spark3.soledede.com,spark1.soledede.com"
                      )
 
   def main(args: Array[String]) {
@@ -58,8 +58,8 @@ object Mapping2Hbase {
         """
           |For example, the following command runs this app on a synthetic dataset:
           |
-          |  java -jar xxx.jar --zookeeper_quorum  spark1.xiaomishu.com,spark2.xiaomishu.com,spark4.xiaomishu.com,spark9.xiaomishu.com,spark9.xiaomishu.com \
-          |  /home/hadoop/recomend/res_mapping.txt
+          |  java -jar xxx.jar --zookeeper_quorum  spark2.soledede.com,spark3.soledede.com,spark1.soledede.com \
+          |  /home/hadoop/recomend/item_mapping.c
         """.stripMargin)
     }
 
@@ -75,16 +75,12 @@ object Mapping2Hbase {
     confHbase.set("hbase.zookeeper.quorum",params.zookeeper_quorum);
     Mapping2Hbase.hb.setConf(confHbase)
     Mapping2Hbase.hb.createTable(params.hbase_mapping_table,params.hbase_columnfamily);
-    var listMp = Source.fromFile(params.input).getLines().map { line =>
+    var listMp = Source.fromFile(params.input).getLines().foreach{ line =>
       val fields = line.split(params.file_separator)
-      Mapping2Hbase.hb.putSingleValue(params.hbase_mapping_table,fields(0),params.hbase_columnfamily,"resid",fields(1))
-      println(fields(0)+":"+fields(1))
-      (fields(0),fields(1))
-      // println(fields(0)+":"+fields(1))
+      Mapping2Hbase.hb.putSingleValue(params.hbase_mapping_table,fields(0),params.hbase_columnfamily,"itemid",fields(1))
+      println(fields(0)+": XXXXXX"+fields(1).substring(7))
+      //(fields(0),fields(1))
     }
-   // listMp.foreach(println)
-    // listMp.map( (Mapping2Hbase.hb.putSingleValue("mapping",_._1,"res","resid",_._2)))
-
   }
 }
 
